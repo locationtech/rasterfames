@@ -40,11 +40,11 @@ object RFDependenciesPlugin extends AutoPlugin {
       "org.locationtech.geomesa" %% s"geomesa-$module" % rfGeoMesaVersion.value
     }
 
-    val scalatest = "org.scalatest" %% "scalatest" % "3.0.3" % Test
+    val scalatest = "org.scalatest" %% "scalatest" % "3.2.5" % Test
     val shapeless = "com.chuusai" %% "shapeless" % "2.3.3"
-    val `jts-core` = "org.locationtech.jts" % "jts-core" % "1.16.1"
-    val `slf4j-api` = "org.slf4j" % "slf4j-api" % "1.7.25"
-    val scaffeine = "com.github.blemale" %% "scaffeine" % "3.1.0"
+    val `jts-core` = "org.locationtech.jts" % "jts-core" % "1.17.0"
+    val `slf4j-api` = "org.slf4j" % "slf4j-api" % "1.7.28"
+    val scaffeine = "com.github.blemale" %% "scaffeine" % "4.0.2"
     val `spray-json` = "io.spray" %%  "spray-json" % "1.3.4"
     val `scala-logging` = "com.typesafe.scala-logging" %% "scala-logging" % "3.8.0"
   }
@@ -57,24 +57,10 @@ object RFDependenciesPlugin extends AutoPlugin {
       "boundless-releases" at "https://repo.boundlessgeo.com/main/",
       "Open Source Geospatial Foundation Repository" at "https://download.osgeo.org/webdav/geotools/"
     ),
-    /** https://github.com/lucidworks/spark-solr/issues/179
-      * Thanks @pomadchin for the tip! */
-    dependencyOverrides ++= {
-      val deps = Seq(
-        "com.fasterxml.jackson.core" % "jackson-core" % "2.6.7",
-        "com.fasterxml.jackson.core" % "jackson-databind" % "2.6.7",
-        "com.fasterxml.jackson.core" % "jackson-annotations" % "2.6.7"
-      )
-      CrossVersion.partialVersion(scalaVersion.value) match {
-        // if Scala 2.12+ is used
-        case Some((2, scalaMajor)) if scalaMajor >= 12 => deps
-        case _ => deps :+ "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.6.7"
-      }
-    },
     // dependencyOverrides += "com.azavea.gdal" % "gdal-warp-bindings" % "33.f746890",
     // NB: Make sure to update the Spark version in pyrasterframes/python/setup.py
-    rfSparkVersion := "2.4.7",
-    rfGeoTrellisVersion := "3.3.0",
-    rfGeoMesaVersion := "2.2.1"
+    rfSparkVersion := "3.1.1",
+    rfGeoTrellisVersion := "3.6.0",
+    rfGeoMesaVersion := "3.2.0"
   )
 }

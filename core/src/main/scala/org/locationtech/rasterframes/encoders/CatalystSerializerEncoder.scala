@@ -61,23 +61,49 @@ object CatalystSerializerEncoder {
       nullSafeCodeGen(ctx, ev, input => s"${ev.value} = ($objType) $cs.fromInternalRow($input);")
     }
   }
-  def apply[T: TypeTag: CatalystSerializer](flat: Boolean = false): ExpressionEncoder[T] = {
+
+  def apply[T: TypeTag: CatalystSerializer](): ExpressionEncoder[T] = {
     val serde = CatalystSerializer[T]
 
-    val schema = if (flat)
-      StructType(Seq(
-        StructField("value", serde.schema, true)
-      ))
-    else serde.schema
+    val schema = serde.schema
 
     val parentType: DataType = ScalaReflection.dataTypeFor[T]
 
-    val inputObject = BoundReference(0, parentType, nullable = true)
+    val serializerInput= BoundReference(0, parentType, nullable = true)
 
-    val serializer = CatSerializeToRow(inputObject, serde)
+    val serializer = CatSerializeToRow(serializerInput, serde)
 
-    val deserializer: Expression = CatDeserializeFromRow(GetColumnByOrdinal(0, schema), serde, parentType)
+    val deserializerInput = GetColumnByOrdinal(0, schema)
+    val deserializer: Expression = CatDeserializeFromRow(deserializerInput, serde, parentType)
 
-    ExpressionEncoder(schema, flat = flat, Seq(serializer), deserializer, typeToClassTag[T])
+    def nullSafe(input: Expression, result: Expression): Expression = {
+      If(IsNull(input), Literal.create(null, result.dataType), result)
+    }
+
+
+    ExpressionEncoder(
+      wrap(serializer),
+      deserializer,
+      typeToClassTag[T])
   }
+
+  def wrapValue(child: Expression)=  {
+    CreateNamedStruct(Literal("value") :: child :: Nil)
+  }
+
+  def unwrapValue(child: Expression) = {
+    GetColumnByOrdinal(0, child.dataType)
+  }
+
+  def wrap(child: Expression): CreateNamedStruct =
+    CreateNamedStruct({
+      child.dataType match {
+        case StructType(fields) =>
+          fields.zipWithIndex.toList.map { case (field, index) =>
+            Literal(field.name) :: GetStructField(child, index, Some(field.name)) :: Nil
+          }.flatten
+        case _ =>
+          throw new RuntimeException(s"Unable to wrap ${child.dataType} into StructType")
+      }
+    })
 }

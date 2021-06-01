@@ -48,17 +48,20 @@ object CellTypeEncoder {
 
     val intermediateType = ObjectType(classOf[String])
     val serializer: Expression =
-      StaticInvoke(
-        classOf[UTF8String],
-        StringType,
-        "fromString",
-        InvokeSafely(inputObject, "name", intermediateType) :: Nil
-      )
+      CreateNamedStruct(List(
+        Literal(schema.fields.head.name),
+        StaticInvoke(
+          classOf[UTF8String],
+          StringType,
+          "fromString",
+          InvokeSafely(inputObject, "name", intermediateType) :: Nil
+        )
+      ))
 
     val inputRow = GetColumnByOrdinal(0, schema)
     val deserializer: Expression =
       StaticInvoke(CellType.getClass, ctType, "fromName", InvokeSafely(inputRow, "toString", intermediateType) :: Nil)
 
-    ExpressionEncoder[CellType](schema, flat = false, Seq(serializer), deserializer, classTag[CellType])
+    ExpressionEncoder[CellType](serializer, deserializer, classTag[CellType])
   }
 }
