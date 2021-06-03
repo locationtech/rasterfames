@@ -19,32 +19,20 @@
  *
  */
 
-package org.locationtech.rasterframes.expressions.localops
-
+package org.locationtech.rasterframes.expressions.focalops
 import geotrellis.raster.Tile
+import geotrellis.raster.mapalgebra.focal.Kernel
 import org.apache.spark.sql.Column
+import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
-import org.apache.spark.sql.catalyst.expressions.{Expression, ExpressionDescription}
-import org.apache.spark.sql.types.DataType
-import org.locationtech.rasterframes.expressions.{UnaryRasterOperator, fpTile}
+import org.locationtech.rasterframes.expressions.{NullToValue, UnaryRasterOperator}
 
-@ExpressionDescription(
-  usage = "_FUNC_(tile) - Perform cell-wise square root",
-  arguments = """
-  Arguments:
-    * tile - input tile
-  """,
-  examples =
-    """
-    Examples:
-      > SELECT _FUNC_(tile)
-      ... """
-)
-case class Sqrt(child: Expression) extends UnaryRasterOperator with CodegenFallback {
-  override val nodeName: String = "rf_sqrt"
-  override protected def op(tile: Tile): Tile = fpTile(tile).localPow(0.5)
-  override def dataType: DataType = child.dataType
+case class Convolve(child: Expression, kernel: Kernel) extends UnaryRasterOperator with NullToValue with CodegenFallback {
+  override def nodeName: String = "rf_convolve"
+  override def na: Any = null
+  override protected def op(t: Tile): Tile = t.convolve(kernel)
 }
-object Sqrt {
-  def apply(tile: Column): Column = new Column(Sqrt(tile.expr))
+
+object Convolve {
+  def apply(tile: Column, kernel: Kernel): Column = new Column(Convolve(tile.expr, kernel))
 }

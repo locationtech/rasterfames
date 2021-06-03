@@ -1,7 +1,7 @@
 /*
  * This software is licensed under the Apache 2 license, quoted below.
  *
- * Copyright 2019 Astraea, Inc.
+ * Copyright 2020 Astraea, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -19,30 +19,13 @@
  *
  */
 
-package org.locationtech.rasterframes.expressions.localops
+package org.locationtech.rasterframes.expressions.focalops
 
-import geotrellis.raster.Tile
-import org.apache.spark.sql.Column
+import geotrellis.raster.mapalgebra.focal.Neighborhood
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
-import org.apache.spark.sql.catalyst.expressions.{Expression, ExpressionDescription}
 import org.locationtech.rasterframes.expressions.{NullToValue, UnaryRasterOperator}
 
-@ExpressionDescription(
-  usage = "_FUNC_(tile) - Round cell values to the nearest integer without changing the cell type.",
-  arguments = """
-  Arguments:
-    * tile - tile column to round""",
-  examples = """
-  Examples:
-    > SELECT  _FUNC_(tile);
-       ..."""
-)
-case class Round(child: Expression) extends UnaryRasterOperator
-  with NullToValue with CodegenFallback {
-  override def nodeName: String = "rf_round"
+trait FocalNeighborhoodOperator extends UnaryRasterOperator with NullToValue with CodegenFallback {
   override def na: Any = null
-  override protected def op(child: Tile): Tile = child.localRound()
-}
-object Round{
-  def apply(tile: Column): Column = new Column(Round(tile.expr))
+  def neighborhood: Neighborhood
 }
