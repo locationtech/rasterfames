@@ -38,6 +38,7 @@ import org.locationtech.rasterframes.{RasterFunctions, _}
 import spray.json._
 import org.locationtech.rasterframes.util.JsonCodecs._
 import scala.collection.JavaConverters._
+import geotrellis.raster.mapalgebra.focal.{Neighborhood, Square}
 
 /**
  * py4j access wrapper to RasterFrameLayer entry points.
@@ -149,6 +150,8 @@ class PyRFContext(implicit sparkSession: SparkSession) extends RasterFunctions
     */
   def _parse_cell_type(name: String): CellType = CellType.fromName(name)
 
+  def _parse_neighborhood(name: String): Neighborhood = Square(1)
+
   /**
     * Convenience list of valid cell type strings
     * @return Java List of String, which py4j can interpret as a python `list`
@@ -255,7 +258,7 @@ class PyRFContext(implicit sparkSession: SparkSession) extends RasterFunctions
   def _resolveRasterRef(srcBin: Array[Byte], bandIndex: jInt, xmin: jDouble, ymin: jDouble, xmax: jDouble, ymax: jDouble): AnyRef = {
     val src = KryoSupport.deserialize[RFRasterSource](ByteBuffer.wrap(srcBin))
     val extent = Extent(xmin, ymin, xmax, ymax)
-    RasterRef(src, bandIndex, Some(extent), None)
+    RasterRef(src, bandIndex, Some(extent), None, 0: Short)
   }
 
   def _dfToMarkdown(df: DataFrame, numRows: Int, truncate: Boolean): String = {
